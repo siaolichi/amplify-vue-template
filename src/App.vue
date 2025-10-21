@@ -1,10 +1,24 @@
-<script setup lang="ts">
-import Todos from './components/Todos.vue'
+<script setup>
+import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <main>
-    <Todos />
-  </main>
+  <!-- <header>
+    <div class="wrapper">
+      <nav>
+        <RouterLink to="/">Home</RouterLink>
+        <RouterLink to="/about">About</RouterLink>
+      </nav>
+    </div>
+  </header> -->
+
+  <RouterView />
 </template>
 
+<style>
+header {
+  line-height: 1.5;
+  max-height: 100vh;
+  position: fixed;
+}
+</style>
