@@ -11,12 +11,12 @@
 </template>
 
 <script setup>
-import { MDBCard, MDBCardBody, MDBCardTitle, MDBCardText, MDBBtn } from 'mdb-vue-ui-kit'
+import { MDBCard, MDBCardBody, MDBCardTitle, MDBCardText, MDBBtn } from "mdb-vue-ui-kit";
 
-const emit = defineEmits(['onClick'])
+const emit = defineEmits(["onClick"]);
 
 function onClick() {
-  emit('onClick')
+  emit("onClick");
 }
 </script>
 
@@ -31,6 +31,7 @@ function onClick() {
   display: flex;
   justify-content: center;
   align-items: center;
+  color: black;
 
   &__card {
     z-index: 2;

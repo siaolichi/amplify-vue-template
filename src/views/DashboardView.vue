@@ -1,5 +1,6 @@
 <template>
   <div class="dashboard">
+    <WarningCard v-if="showSuccessCard" @on-click="onClickCard" />
     <div class="dashboard__card">
       <h1 class="dashboard__title">歡迎登入 Dreamlog</h1>
       <p class="dashboard__subtitle">請輸入你的暱稱</p>
@@ -41,6 +42,9 @@ import { useRouter } from "vue-router";
 import { fetchUserAttributes, updateUserAttribute } from "aws-amplify/auth";
 import { useAuthStore } from "../stores/auth";
 
+import WarningCard from "@/components/WarningCard.vue";
+
+const showSuccessCard = ref(true);
 const nickname = ref("");
 const submittedNickname = ref("");
 const loading = ref(false);
@@ -107,6 +111,10 @@ onMounted(async () => {
     }
   }
 });
+
+function onClickCard() {
+  showSuccessCard.value = false;
+}
 </script>
 
 <style scoped lang="scss">

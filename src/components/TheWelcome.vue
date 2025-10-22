@@ -1,8 +1,7 @@
 <script setup>
 import bgImage from "@/assets/images/login-bg.png";
 import LoginSection from "./LoginSection.vue";
-import WarningCard from "./WarningCard.vue";
-import { onMounted, ref, watch } from "vue";
+import { onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";
@@ -10,7 +9,6 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 const authStore = useAuthStore();
 const { isAuthenticated } = storeToRefs(authStore);
-const showSuccessCard = ref(false);
 
 onMounted(() => {
   authStore.initialize();
@@ -20,7 +18,6 @@ watch(
   isAuthenticated,
   (value) => {
     if (value) {
-      showSuccessCard.value = true;
       router.push({ name: "dashboard" });
     }
   },
@@ -47,6 +44,5 @@ function onClickCard() {
 <template>
   <div class="welcome" :style="{ backgroundImage: `url(${bgImage})` }">
     <LoginSection v-if="!isAuthenticated" />
-    <WarningCard v-else-if="showSuccessCard" @on-click="onClickCard" />
   </div>
 </template>
