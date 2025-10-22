@@ -63,7 +63,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const CHAT_API_URL = "https://response-api-0140b3406b18.herokuapp.com/api/chat";
-const INACTIVITY_TIMEOUT = 30000;
+const INACTIVITY_TIMEOUT = 180000;
 
 let messageId = 0;
 let inactivityTimerId = null;
