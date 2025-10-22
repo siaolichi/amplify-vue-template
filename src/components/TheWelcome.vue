@@ -1,31 +1,34 @@
 <script setup>
-import bgImage from '@/assets/images/login-bg.png'
-import LoginSection from './LoginSection.vue'
-import WarningCard from './WarningCard.vue'
-import { onMounted, ref, watch } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useAuthStore } from '@/stores/auth'
+import bgImage from "@/assets/images/login-bg.png";
+import LoginSection from "./LoginSection.vue";
+import WarningCard from "./WarningCard.vue";
+import { onMounted, ref, watch } from "vue";
+import { storeToRefs } from "pinia";
+import { useAuthStore } from "@/stores/auth";
+import { useRouter } from "vue-router";
 
-const authStore = useAuthStore()
-const { isAuthenticated } = storeToRefs(authStore)
-const showSuccessCard = ref(false)
+const router = useRouter();
+const authStore = useAuthStore();
+const { isAuthenticated } = storeToRefs(authStore);
+const showSuccessCard = ref(false);
 
 onMounted(() => {
-  authStore.initialize()
-})
+  authStore.initialize();
+});
 
 watch(
   isAuthenticated,
   (value) => {
     if (value) {
-      showSuccessCard.value = true
+      showSuccessCard.value = true;
+      router.push({ name: "dashboard" });
     }
   },
-  { immediate: true },
-)
+  { immediate: true }
+);
 
 function onClickCard() {
-  showSuccessCard.value = false
+  showSuccessCard.value = false;
 }
 </script>
 

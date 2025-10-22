@@ -31,6 +31,11 @@ const router = createRouter({
       component: () => import("../views/RegisterView.vue"),
     },
     {
+      path: "/dashboard",
+      name: "dashboard",
+      component: () => import("../views/DashboardView.vue"),
+    },
+    {
       path: "/qrcode-3dc6ae3aa6c51faa0f08f6c8f9e3a4702b65fa59",
       name: "qrcode",
       component: () => import("../views/QrCodeView.vue"),
