@@ -62,7 +62,7 @@
 <script setup>
 import { nextTick, onMounted, ref } from "vue";
 
-const CHAT_API_URL = process.env.CHAT_BACKEND;
+const CHAT_API_URL = "https://response-api-0140b3406b18.herokuapp.com/api/chat";
 
 let messageId = 0;
 
