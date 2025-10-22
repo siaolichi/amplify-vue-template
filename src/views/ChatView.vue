@@ -60,11 +60,15 @@
 </template>
 
 <script setup>
-import { nextTick, onMounted, ref } from "vue";
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const CHAT_API_URL = "https://response-api-0140b3406b18.herokuapp.com/api/chat";
+const INACTIVITY_TIMEOUT = 30000;
 
 let messageId = 0;
+let inactivityTimerId = null;
+let stopDraftWatcher = null;
+let hasUserTyped = false;
 
 const draft = ref("");
 const isAssistantTyping = ref(false);
@@ -158,9 +162,51 @@ function scrollToBottom(options = {}) {
   });
 }
 
+function resetInactivityTimer() {
+  clearInactivityTimer();
+  inactivityTimerId = window.setTimeout(() => {
+    window.location.reload();
+  }, INACTIVITY_TIMEOUT);
+}
+
+function clearInactivityTimer() {
+  if (inactivityTimerId !== null) {
+    clearTimeout(inactivityTimerId);
+    inactivityTimerId = null;
+  }
+}
+
+function startInactivityWatcher() {
+  if (stopDraftWatcher) return;
+  stopDraftWatcher = watch(draft, (newValue) => {
+    const trimmed = typeof newValue === "string" ? newValue.trim() : "";
+    if (!hasUserTyped) {
+      if (!trimmed) {
+        return;
+      }
+      hasUserTyped = true;
+    }
+    resetInactivityTimer();
+  });
+}
+
+function stopInactivityWatcher() {
+  if (stopDraftWatcher) {
+    stopDraftWatcher();
+    stopDraftWatcher = null;
+  }
+  hasUserTyped = false;
+  clearInactivityTimer();
+}
+
 onMounted(() => {
   scrollToBottom();
   inputRef.value?.focus();
+  startInactivityWatcher();
+});
+
+onBeforeUnmount(() => {
+  stopInactivityWatcher();
 });
 </script>
 
