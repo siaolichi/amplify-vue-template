@@ -6,7 +6,6 @@
       <a class="qr__image" target="_blank" rel="noopener">
         <img :src="qrSrc" alt="Dreamlog 註冊連結 QR Code" width="280" height="280" />
       </a>
-      <a :href="targetUrl" class="qr__link" target="_blank" rel="noopener"> https://dreamlog.io/register-55688 </a>
       <p class="qr__timer">{{ countdown }} 秒後將自動返回首頁</p>
     </section>
   </main>
@@ -19,7 +18,7 @@ import QRCode from "@/assets/images/qrcode.png";
 
 const router = useRouter();
 
-const targetUrl = "https://dreamlog.io/register-55688";
+const targetUrl = "https://dreamlog.io/register-2337306cfbf0a1be67d91b55728f7233b71bbc05";
 const qrSrc = QRCode;
 
 const countdown = ref(30);
