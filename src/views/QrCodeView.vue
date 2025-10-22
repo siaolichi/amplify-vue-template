@@ -3,46 +3,44 @@
     <section class="qr__card">
       <h1 class="qr__title">Dreamlog 註冊</h1>
       <p class="qr__subtitle">使用手機掃描或點擊下方連結前往註冊頁面。</p>
-      <!-- <a :href="targetUrl" class="qr__image" target="_blank" rel="noopener">
+      <a class="qr__image" target="_blank" rel="noopener">
         <img :src="qrSrc" alt="Dreamlog 註冊連結 QR Code" width="280" height="280" />
       </a>
-      <a :href="targetUrl" class="qr__link" target="_blank" rel="noopener">
-        https://dreamlog.io/register-55688
-      </a> -->
-      <img :src="qrSrc" alt="Dreamlog 註冊連結 QR Code" width="280" height="280" />
+      <a :href="targetUrl" class="qr__link" target="_blank" rel="noopener"> https://dreamlog.io/register-55688 </a>
       <p class="qr__timer">{{ countdown }} 秒後將自動返回首頁</p>
     </section>
   </main>
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, onBeforeUnmount, ref } from "vue";
+import { useRouter } from "vue-router";
+import QRCode from "@/assets/images/qrcode.png";
 
-const router = useRouter()
+const router = useRouter();
 
-const targetUrl = 'https://dreamlog.io/register-55688'
-const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(targetUrl)}`
+const targetUrl = "https://dreamlog.io/register-55688";
+const qrSrc = QRCode;
 
-const countdown = ref(30)
-let intervalId
+const countdown = ref(30);
+let intervalId;
 
 onMounted(() => {
   intervalId = window.setInterval(() => {
     if (countdown.value <= 1) {
-      clearInterval(intervalId)
-      router.replace({ name: 'home' })
-      return
+      clearInterval(intervalId);
+      router.replace({ name: "home" });
+      return;
     }
-    countdown.value -= 1
-  }, 1000)
-})
+    countdown.value -= 1;
+  }, 1000);
+});
 
 onBeforeUnmount(() => {
   if (intervalId) {
-    clearInterval(intervalId)
+    clearInterval(intervalId);
   }
-})
+});
 </script>
 
 <style scoped>
@@ -88,9 +86,7 @@ onBeforeUnmount(() => {
   padding: 12px;
   background: rgba(5, 6, 15, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .qr__image img {
