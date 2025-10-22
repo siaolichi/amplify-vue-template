@@ -3,22 +3,15 @@
     <div class="chat-view__wrapper">
       <div class="chat-body" ref="messagesWrapper" aria-live="polite">
         <div class="message-list">
-          <article
-            v-for="message in messages"
-            :key="message.id"
-            :class="['message', `message--${message.role}`]"
-          >
-            <div
-              class="message__avatar"
-              :aria-label="message.role === 'user' ? '使用者' : 'Dreamlog AI'"
-            >
+          <article v-for="message in messages" :key="message.id" :class="['message', `message--${message.role}`]">
+            <div class="message__avatar" :aria-label="message.role === 'user' ? '使用者' : 'Dreamlog AI'">
               <span v-if="message.role === 'assistant'">DL</span>
               <span v-else>你</span>
             </div>
             <div class="message__bubble">
               <div class="message__meta">
                 <div class="message__author">
-                  {{ message.role === 'user' ? '你' : 'Dreamlog AI' }}
+                  {{ message.role === "user" ? "你" : "Dreamlog AI" }}
                 </div>
                 <div class="message__time">{{ formatTime(message.timestamp) }}</div>
               </div>
@@ -67,47 +60,44 @@
 </template>
 
 <script setup>
-import { nextTick, onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref } from "vue";
 
-const CHAT_API_URL = 'http://localhost:8787/api/chat'
+const CHAT_API_URL = process.env.CHAT_BACKEND;
 
-let messageId = 0
+let messageId = 0;
 
-const draft = ref('')
-const isAssistantTyping = ref(false)
-const messagesWrapper = ref(null)
-const inputRef = ref(null)
+const draft = ref("");
+const isAssistantTyping = ref(false);
+const messagesWrapper = ref(null);
+const inputRef = ref(null);
 
 const messages = ref([
-  createMessage(
-    'assistant',
-    '你好，我是 Dreamlog AI。分享你的夢境，我會陪你一起解析、記錄與延伸。',
-  ),
-])
+  createMessage("assistant", "你好，MiraMirage 已經消失了四個月。給我一個時間，我可以告訴你發生什麼事。"),
+]);
 
 function createMessage(role, content) {
-  messageId += 1
+  messageId += 1;
   return {
     id: messageId,
     role,
     content: content.trim(),
     timestamp: new Date(),
-  }
+  };
 }
 
 function handleSubmit() {
-  const content = draft.value.trim()
-  if (!content || isAssistantTyping.value) return
+  const content = draft.value.trim();
+  if (!content || isAssistantTyping.value) return;
 
-  messages.value.push(createMessage('user', content))
-  draft.value = ''
-  scrollToBottom({ smooth: true })
-  triggerAssistantResponse()
+  messages.value.push(createMessage("user", content));
+  draft.value = "";
+  scrollToBottom({ smooth: true });
+  triggerAssistantResponse();
 }
 
 async function triggerAssistantResponse() {
-  isAssistantTyping.value = true
-  scrollToBottom({ smooth: true })
+  isAssistantTyping.value = true;
+  scrollToBottom({ smooth: true });
 
   try {
     const payload = {
@@ -115,64 +105,63 @@ async function triggerAssistantResponse() {
         role,
         content: content.trim(),
       })),
-    }
+    };
 
     const response = await fetch(CHAT_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Chat API request failed with status ${response.status}`)
+      throw new Error(`Chat API request failed with status ${response.status}`);
     }
 
-    const data = await response.json()
-    const reply =
-      typeof data.reply === 'string' && data.reply.trim() ? data.reply.trim() : '（沒有內容）'
+    const data = await response.json();
+    const reply = typeof data.reply === "string" && data.reply.trim() ? data.reply.trim() : "（沒有內容）";
 
-    messages.value.push(createMessage('assistant', reply))
+    messages.value.push(createMessage("assistant", reply));
   } catch (error) {
-    console.error('Chat API error:', error)
-    messages.value.push(createMessage('assistant', '抱歉，我暫時無法回應。請稍後再試。'))
+    console.error("Chat API error:", error);
+    messages.value.push(createMessage("assistant", "抱歉，我暫時無法回應。請稍後再試。"));
   } finally {
-    isAssistantTyping.value = false
-    scrollToBottom({ smooth: true })
+    isAssistantTyping.value = false;
+    scrollToBottom({ smooth: true });
   }
 }
 
 function onInputKeyDown(event) {
-  if (event.key === 'Enter' && !event.shiftKey) {
-    event.preventDefault()
-    handleSubmit()
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    handleSubmit();
   }
 }
 
 function formatTime(date) {
-  return new Intl.DateTimeFormat('zh-TW', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
+  return new Intl.DateTimeFormat("zh-TW", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function scrollToBottom(options = {}) {
-  const { smooth = false } = options
+  const { smooth = false } = options;
   nextTick(() => {
-    const element = messagesWrapper.value
-    if (!element) return
+    const element = messagesWrapper.value;
+    if (!element) return;
     const scrollOptions = {
       top: element.scrollHeight,
-      behavior: smooth ? 'smooth' : 'auto',
-    }
+      behavior: smooth ? "smooth" : "auto",
+    };
 
-    element.scrollTo(scrollOptions)
-  })
+    element.scrollTo(scrollOptions);
+  });
 }
 
 onMounted(() => {
-  scrollToBottom()
-  inputRef.value?.focus()
-})
+  scrollToBottom();
+  inputRef.value?.focus();
+});
 </script>
 
 <style scoped lang="scss">
@@ -181,8 +170,7 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   padding: clamp(24px, 6vw, 64px) 16px 32px;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(61, 92, 255, 0.28), transparent 45%),
+  background: radial-gradient(circle at 20% 20%, rgba(61, 92, 255, 0.28), transparent 45%),
     radial-gradient(circle at 80% 0%, rgba(233, 30, 99, 0.3), transparent 40%), #05060f;
   color: #f5f6ff;
 }
@@ -375,10 +363,7 @@ onMounted(() => {
   color: white;
   background: linear-gradient(135deg, rgba(233, 30, 99, 0.95), rgba(163, 69, 255, 0.9));
   cursor: pointer;
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease,
-    opacity 0.18s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
 }
 
 .chat-footer__send:hover:not(:disabled) {
