@@ -2,10 +2,7 @@
   <div class="dashboard">
     <WarningCard v-if="showSuccessCard" @on-click="onClickCard" />
     <div class="dashboard__card" :aria-busy="loadingAttributes">
-      <div v-if="loadingAttributes" class="dashboard__loading" role="status" aria-live="polite">
-        <span class="dashboard__spinner" aria-hidden="true"></span>
-        <p class="dashboard__loading-text">載入中...</p>
-      </div>
+      <LoadingIndicator v-if="loadingAttributes" />
       <template v-else>
         <h1 class="dashboard__title">歡迎登入 Dreamlog</h1>
         <p class="dashboard__subtitle">請輸入你的暱稱</p>
@@ -49,6 +46,7 @@ import { fetchUserAttributes, updateUserAttribute } from "aws-amplify/auth";
 import { useAuthStore } from "../stores/auth";
 
 import WarningCard from "@/components/WarningCard.vue";
+import LoadingIndicator from "@/components/LoadingIndicator.vue";
 
 const showSuccessCard = ref(true);
 const nickname = ref("");
@@ -224,31 +222,6 @@ function onClickCard() {
   color: rgba(255, 117, 117, 0.94);
 }
 
-.dashboard__loading {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 48px 0;
-}
-
-.dashboard__spinner {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 4px solid rgba(245, 246, 255, 0.16);
-  border-top-color: rgba(245, 246, 255, 0.95);
-  animation: dashboard-spin 1s linear infinite;
-}
-
-.dashboard__loading-text {
-  color: rgba(245, 246, 255, 0.78);
-  font-weight: 600;
-  letter-spacing: 0.4px;
-}
-
 .dashboard__logout {
   margin-top: 16px;
   padding: 12px 16px;
@@ -272,14 +245,5 @@ function onClickCard() {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.28);
   transform: translateY(-1px);
-}
-
-@keyframes dashboard-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 </style>

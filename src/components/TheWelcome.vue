@@ -23,10 +23,6 @@ watch(
   },
   { immediate: true }
 );
-
-function onClickCard() {
-  showSuccessCard.value = false;
-}
 </script>
 
 <style>
