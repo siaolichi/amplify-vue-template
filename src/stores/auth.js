@@ -234,7 +234,7 @@ export const useAuthStore = defineStore("auth", () => {
   const errorMessage = computed(() => error.value?.message ?? "");
 
   async function ensureCollectionForUser(currentUser) {
-    const userId = currentUser?.userId ?? currentUser?.username ?? "";
+    const userId = currentUser?.userId;
     if (!userId) return;
 
     try {
@@ -243,10 +243,10 @@ export const useAuthStore = defineStore("auth", () => {
         limit: 1,
       });
 
-      if (!collections?.length) {
+      if (collections?.length == 0) {
         await dataClient.models.Collection.create({
           user: userId,
-          property: {},
+          property: { name: "Mira's room" },
         });
       }
     } catch (err) {

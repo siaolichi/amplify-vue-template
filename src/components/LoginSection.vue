@@ -1,6 +1,6 @@
 <template>
   <div class="login-section">
-    <form @submit.prevent="onSubmit">
+    <form v-if="!showReset" @submit.prevent="onSubmit">
       <!-- Email input -->
       <MDBInput
         type="username"

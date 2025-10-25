@@ -260,7 +260,7 @@ async function fetchCardsFromData() {
 
 function detectCardModelCandidates() {
   const runtimeModels = Object.keys(dataClient?.models ?? {});
-  const preferred = ["Card", "Cards", "NFTCard", "NftCard", "NftCollection", "Collection", "Todo"];
+  const preferred = ["Card", "Cards", "NFTCard", "NftCard", "NftCollection", "Collection"];
   const ordered = [...preferred, ...runtimeModels];
   return ordered.filter((value, index, array) => value && array.indexOf(value) === index);
 }
@@ -485,7 +485,6 @@ function mapRarityToClass(rarity) {
 
   return "common";
 }
-
 </script>
 
 <style scoped lang="scss">
