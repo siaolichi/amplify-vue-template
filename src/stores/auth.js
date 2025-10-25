@@ -1,7 +1,19 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
-import { confirmSignIn, getCurrentUser, signIn, signOut, signUp, confirmSignUp } from "aws-amplify/auth";
+import {
+  confirmSignIn,
+  getCurrentUser,
+  signIn,
+  signOut,
+  signUp,
+  confirmSignUp,
+  resetPassword,
+  confirmResetPassword,
+} from "aws-amplify/auth";
 import { Hub } from "aws-amplify/utils";
+import { generateClient } from "aws-amplify/data";
+
+const dataClient = generateClient();
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref(null);
@@ -18,6 +30,7 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const currentUser = await getCurrentUser();
       user.value = currentUser;
+      await ensureCollectionForUser(currentUser);
     } catch (err) {
       user.value = null;
       // Not signed in is expected on first load; don't surface as an error
@@ -44,6 +57,7 @@ export const useAuthStore = defineStore("auth", () => {
 
       if (response.isSignedIn) {
         user.value = response.user;
+        await ensureCollectionForUser(response.user);
       }
 
       return response;
@@ -69,6 +83,7 @@ export const useAuthStore = defineStore("auth", () => {
 
       if (response.isSignedIn) {
         user.value = response.user;
+        await ensureCollectionForUser(response.user);
       }
 
       return response;
@@ -128,6 +143,7 @@ export const useAuthStore = defineStore("auth", () => {
         // Attempt auto sign-in for Gen 2 returns boolean; rely on initialize afterwards
         try {
           const currentUser = await getCurrentUser();
+          await ensureCollectionForUser(currentUser);
           user.value = currentUser;
         } catch (autoSignInError) {
           if (import.meta?.env?.DEV) {
@@ -165,7 +181,80 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
+  async function initiatePasswordReset(email) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const normalizedEmail = email?.trim?.() ?? "";
+      if (!normalizedEmail) {
+        throw new Error("需要提供 Email 才能重設密碼。");
+      }
+      const result = await resetPassword({ username: normalizedEmail });
+      nextStep.value = result.nextStep;
+      return result;
+    } catch (err) {
+      error.value = err;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function completePasswordReset({ email, confirmationCode, newPassword }) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const normalizedEmail = email?.trim?.() ?? "";
+      if (!normalizedEmail) {
+        throw new Error("需要提供 Email 才能完成重設密碼。");
+      }
+      if (!confirmationCode?.trim?.()) {
+        throw new Error("需要提供驗證碼才能完成重設密碼。");
+      }
+      if (!newPassword) {
+        throw new Error("需要提供新密碼才能完成重設密碼。");
+      }
+
+      await confirmResetPassword({
+        username: normalizedEmail,
+        confirmationCode: confirmationCode.trim(),
+        newPassword,
+      });
+      nextStep.value = null;
+    } catch (err) {
+      error.value = err;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   const errorMessage = computed(() => error.value?.message ?? "");
+
+  async function ensureCollectionForUser(currentUser) {
+    const userId = currentUser?.userId ?? currentUser?.username ?? "";
+    if (!userId) return;
+
+    try {
+      const { data: collections } = await dataClient.models.Collection.list({
+        filter: (collection) => collection.user.eq(userId),
+        limit: 1,
+      });
+
+      if (!collections?.length) {
+        await dataClient.models.Collection.create({
+          user: userId,
+          property: {},
+        });
+      }
+    } catch (err) {
+      if (import.meta?.env?.DEV) {
+        console.debug("確保使用者收藏資料時發生錯誤：", err);
+      }
+    }
+  }
 
   function startAuthListener() {
     if (removeAuthListener) return;
@@ -178,6 +267,7 @@ export const useAuthStore = defineStore("auth", () => {
           try {
             const currentUser = await getCurrentUser();
             user.value = currentUser;
+            await ensureCollectionForUser(currentUser);
           } catch {
             user.value = null;
           }
@@ -206,6 +296,8 @@ export const useAuthStore = defineStore("auth", () => {
     completeSignIn,
     register,
     confirmRegistration,
+    initiatePasswordReset,
+    completePasswordReset,
     startAuthListener,
   };
 });
