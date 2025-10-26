@@ -244,10 +244,12 @@ export const useAuthStore = defineStore("auth", () => {
       });
 
       if (collections?.length == 0) {
-        await dataClient.models.Collection.create({
+        const data = await dataClient.models.Collection.create({
           user: userId,
-          property: { name: "Mira's room" },
+          property: JSON.stringify({ name: "Mira's room" }),
         });
+
+        console.log(data);
       }
     } catch (err) {
       if (import.meta?.env?.DEV) {
