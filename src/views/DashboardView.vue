@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboard">
+  <div class="dashboard" :style="{ backgroundImage: `url(${bgImage})` }">
     <WarningCard v-if="showSuccessCard" @on-click="onClickCard" />
     <div class="dashboard__container">
       <div class="dashboard__header" :aria-busy="loadingProfile">
@@ -87,6 +87,7 @@ import { generateClient } from "aws-amplify/data";
 import LoadingIndicator from "@/components/LoadingIndicator.vue";
 import WarningCard from "@/components/WarningCard.vue";
 import { useAuthStore } from "../stores/auth";
+import bgImage from "@/assets/images/logo.png";
 
 const dataClient = generateClient();
 
@@ -493,7 +494,10 @@ function mapRarityToClass(rarity) {
   padding: clamp(24px, 6vw, 64px);
   background: radial-gradient(circle at 15% 20%, rgba(68, 63, 233, 0.14), transparent 52%),
     radial-gradient(circle at 80% 0%, rgba(233, 30, 99, 0.18), transparent 56%), #05060f;
-  color: #f5f6ff;
+
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
 }
 
 .dashboard__container {

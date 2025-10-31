@@ -1,5 +1,5 @@
 <script setup>
-import bgImage from "@/assets/images/login-bg.png";
+import bgImage from "@/assets/images/logo.png";
 import LoginSection from "./LoginSection.vue";
 import { onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
@@ -30,7 +30,8 @@ watch(
   width: 100%;
   height: 100%;
   background-position: center;
-  background-size: cover;
+  background-size: contain;
+  background-repeat: no-repeat;
   display: flex;
   justify-content: center;
   align-items: center;
