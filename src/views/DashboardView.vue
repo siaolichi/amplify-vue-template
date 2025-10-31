@@ -519,11 +519,15 @@ function mapRarityToClass(rarity) {
     display: flex;
     justify-content: space-between;
     align-items: center;
+
+    flex-wrap: wrap;
+    gap: 16px;
   }
 }
 
 .dashboard__form {
   display: inline-flex;
+  flex-grow: 1;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;

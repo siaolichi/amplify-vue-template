@@ -171,6 +171,7 @@ export const useAuthStore = defineStore("auth", () => {
         throw new Error("需要提供 Email 才能完成註冊。");
       }
       const result = await confirmSignUp({ username: normalizedEmail, confirmationCode });
+      await ensureCollectionForUser(currentUser);
       nextStep.value = null;
       return result;
     } catch (err) {
@@ -178,6 +179,7 @@ export const useAuthStore = defineStore("auth", () => {
       throw err;
     } finally {
       loading.value = false;
+      await ensureCollectionForUser(currentUser);
     }
   }
 
