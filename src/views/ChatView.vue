@@ -220,8 +220,8 @@ onBeforeUnmount(() => {
 
 <style scoped lang="scss">
 .chat-view {
-  min-height: calc(var(--chat-view-height, 100vh));
-  height: calc(var(--chat-view-height, 100vh));
+  min-height: calc(var(--chat-view-height, 100%));
+  height: calc(var(--chat-view-height, 100%));
   display: flex;
   justify-content: center;
   padding: clamp(24px, 6vw, 64px) 16px 32px;
