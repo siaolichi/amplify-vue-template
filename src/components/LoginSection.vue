@@ -1,138 +1,154 @@
 <template>
-  <div class="login-section">
-    <form v-if="!showReset" @submit.prevent="onSubmit">
-      <!-- Email input -->
-      <MDBInput
-        type="username"
-        label="Email"
-        id="formEmail"
-        v-model="formEmail"
-        wrapperClass="mb-4"
-        :disabled="needsChallenge || loading"
-      />
-      <!-- Password input -->
-      <MDBInput
-        type="password"
-        label="Password"
-        id="form1Password"
-        v-model="form1Password"
-        wrapperClass="mb-4"
-        :disabled="needsChallenge || loading"
-      />
-      <MDBInput
-        v-if="needsChallenge"
-        type="text"
-        :label="challengeLabel"
-        id="formChallengeResponse"
-        v-model="challengeResponse"
-        wrapperClass="mb-4"
-        :disabled="loading"
-      />
-      <!-- 2 column grid layout for inline styling -->
-      <MDBRow class="mb-4">
-        <MDBCol class="d-flex justify-content-center">
-          <!-- Checkbox -->
-          <MDBCheckbox
-            label="Remember me"
-            id="form1LoginCheck"
-            v-model="form1LoginCheck"
-            :disabled="loading"
-            wrapperClass="mb-3 mb-md-0"
-          />
-        </MDBCol>
-        <MDBCol class="d-flex justify-content-md-end justify-content-center">
-          <!-- Forgot password trigger -->
-          <button type="button" class="login-section__link" @click="toggleReset" :disabled="loading">
-            Forgot password?
-          </button>
-        </MDBCol>
-      </MDBRow>
-      <!-- Submit button -->
-      <MDBBtn color="primary" type="submit" block :disabled="isSubmitDisabled">
-        <span v-if="loading" class="spinner" aria-hidden="true" />
-        <span>{{ needsChallenge ? "Verify" : "Sign in" }}</span>
-      </MDBBtn>
-
-      <p v-if="displayError" class="login-section__error">{{ displayError }}</p>
-      <p v-if="needsChallenge && nextStepMessage" class="login-section__hint">
-        {{ nextStepMessage }}
+  <main class="login">
+    <section class="login__card">
+      <h1 class="login__title">登入 Dreamlog</h1>
+      <p class="login__subtitle">
+        MiraMirage 離開了，但他留下了線索給我們。<br />
+        在這件作品中，ChatPT扮演說書人的角色。<br />
+        透過與說書人的聊天過程，我們可以找到他登入時的帳號與密碼，一起進入夢域誌這個虛擬的新世界裡。
       </p>
-    </form>
 
-    <transition name="login-section-fade">
-      <section v-if="showReset" class="reset-card">
-        <h3 class="reset-card__title">重設密碼</h3>
-        <p class="reset-card__hint">
-          {{
-            resetStep === "request"
-              ? "輸入註冊 Email 以接收驗證碼"
-              : resetStep === "verify"
-              ? "輸入驗證碼與新的密碼以完成重設"
-              : "密碼已更新，現在可以使用新密碼登入"
-          }}
-        </p>
+      <transition name="login__fade" mode="out-in">
+        <form v-if="!showReset" key="form" class="login__form" @submit.prevent="onSubmit">
+          <label class="login__field">
+            <span>Email/Username</span>
+            <input
+              v-model.trim="formEmail"
+              placeholder="輸入你的 Email 或使用者名稱"
+              autocomplete="email"
+              :disabled="needsChallenge || loading"
+              required
+            />
+          </label>
 
-        <MDBInput
-          type="email"
-          label="Email"
-          id="resetEmail"
-          v-model="resetEmail"
-          wrapperClass="mb-3"
-          :disabled="loading || resetStep === 'success'"
-        />
+          <label v-if="!needsChallenge" class="login__field">
+            <span>Password</span>
+            <input
+              v-model="form1Password"
+              type="password"
+              placeholder="輸入密碼"
+              autocomplete="current-password"
+              :disabled="loading"
+              required
+            />
+          </label>
 
-        <div v-if="resetStep === 'request'" class="reset-card__actions">
-          <MDBBtn color="secondary" block type="button" :disabled="isResetRequestDisabled" @click="handleResetRequest">
-            <span v-if="loading" class="spinner" aria-hidden="true" />
-            寄送驗證碼
-          </MDBBtn>
-        </div>
+          <label v-else class="login__field">
+            <span>{{ challengeLabel }}</span>
+            <input
+              v-model.trim="challengeResponse"
+              type="text"
+              placeholder="輸入驗證資訊"
+              :disabled="loading"
+              required
+            />
+          </label>
 
-        <div v-else-if="resetStep === 'verify'" class="reset-card__verify">
-          <MDBInput
-            type="text"
-            label="驗證碼"
-            id="resetCode"
-            v-model="resetCode"
-            wrapperClass="mb-3"
-            :disabled="loading"
-          />
-          <MDBInput
-            type="password"
-            label="新的密碼"
-            id="resetPassword"
-            v-model="resetNewPassword"
-            wrapperClass="mb-3"
-            :disabled="loading"
-          />
-          <MDBBtn color="primary" block type="button" :disabled="isResetConfirmDisabled" @click="handleResetConfirm">
-            <span v-if="loading" class="spinner" aria-hidden="true" />
-            更新密碼
-          </MDBBtn>
-          <div class="reset-card__links">
-            <button type="button" class="reset-card__link" @click="resendResetCode" :disabled="loading">
-              重新寄送驗證碼
-            </button>
-            <button type="button" class="reset-card__link" @click="useDifferentEmail" :disabled="loading">
-              使用其他 Email
-            </button>
+          <div class="login__actions">
+            <label class="login__remember">
+              <input type="checkbox" v-model="form1LoginCheck" :disabled="loading" />
+              <span>記住我</span>
+            </label>
+            <button type="button" class="login__link" @click="toggleReset" :disabled="loading">忘記密碼？</button>
           </div>
-        </div>
 
-        <div v-else-if="resetStep === 'success'" class="reset-card__success">
-          <p class="reset-card__message">{{ resetMessage }}</p>
-          <MDBBtn color="primary" block type="button" @click="closeResetPanel">返回登入</MDBBtn>
-        </div>
+          <button type="submit" class="login__submit" :disabled="isSubmitDisabled">
+            <span v-if="loading" class="login__spinner" aria-hidden="true" />
+            <span>{{ needsChallenge ? "驗證" : "登入" }}</span>
+          </button>
 
-        <p v-if="resetMessage && resetStep !== 'success'" class="reset-card__message">{{ resetMessage }}</p>
-        <p v-if="resetError" class="reset-card__error">{{ resetError }}</p>
-      </section>
-    </transition>
-  </div>
+          <p v-if="displayError" class="login__error">{{ displayError }}</p>
+          <p v-if="needsChallenge && nextStepMessage" class="login__hint">{{ nextStepMessage }}</p>
+        </form>
+
+        <div v-else key="reset" class="login__reset">
+          <h2 class="login__reset-title">重設密碼</h2>
+          <p class="login__hint">
+            {{
+              resetStep === "request"
+                ? "輸入註冊時使用的 Email 以接收驗證碼。"
+                : resetStep === "verify"
+                ? "請輸入驗證碼與新的密碼以完成重設。"
+                : "密碼已更新，請使用新密碼登入。"
+            }}
+          </p>
+
+          <form
+            class="login__form"
+            @submit.prevent="resetStep === 'verify' ? handleResetConfirm() : handleResetRequest()"
+          >
+            <label class="login__field">
+              <span>Email</span>
+              <input
+                v-model.trim="resetEmail"
+                type="email"
+                placeholder="you@example.com"
+                autocomplete="email"
+                :disabled="loading || resetStep === 'success'"
+                required
+              />
+            </label>
+
+            <template v-if="resetStep === 'verify'">
+              <label class="login__field">
+                <span>驗證碼</span>
+                <input
+                  v-model.trim="resetCode"
+                  type="text"
+                  inputmode="numeric"
+                  placeholder="例如：123456"
+                  autocomplete="one-time-code"
+                  :disabled="loading"
+                  required
+                />
+              </label>
+              <label class="login__field">
+                <span>新的密碼</span>
+                <input
+                  v-model="resetNewPassword"
+                  type="password"
+                  placeholder="輸入新的密碼"
+                  autocomplete="new-password"
+                  :disabled="loading"
+                  required
+                />
+              </label>
+            </template>
+
+            <div v-if="resetStep === 'verify'" class="login__reset-actions">
+              <button type="button" class="login__link" @click="resendResetCode" :disabled="loading">
+                重新寄送驗證碼
+              </button>
+              <button type="button" class="login__link" @click="useDifferentEmail" :disabled="loading">
+                使用其他 Email
+              </button>
+            </div>
+
+            <button
+              v-if="resetStep !== 'success'"
+              type="submit"
+              class="login__submit"
+              :disabled="resetStep === 'request' ? isResetRequestDisabled : isResetConfirmDisabled"
+            >
+              <span v-if="loading" class="login__spinner" aria-hidden="true" />
+              <span>{{ resetStep === "request" ? "寄送驗證碼" : "更新密碼" }}</span>
+            </button>
+
+            <button v-else type="button" class="login__submit" @click="closeResetPanel">返回登入</button>
+          </form>
+
+          <p v-if="resetMessage && resetStep !== 'success'" class="login__success">{{ resetMessage }}</p>
+          <p v-if="resetError" class="login__error">{{ resetError }}</p>
+          <button type="button" class="login__link login__link--back" @click="closeResetPanel" :disabled="loading">
+            返回登入
+          </button>
+        </div>
+      </transition>
+    </section>
+  </main>
 </template>
 
 <script setup>
-import { MDBRow, MDBCol, MDBInput, MDBCheckbox, MDBBtn } from "mdb-vue-ui-kit";
 import { computed, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
@@ -163,17 +179,17 @@ const needsChallenge = computed(() => nextStep.value?.signInStep && nextStep.val
 const nextStepMessage = computed(() => describeNextStep(nextStep.value));
 
 const challengeLabel = computed(() => {
-  if (!nextStep.value) return "Verification code";
+  if (!nextStep.value) return "驗證資訊";
 
   switch (nextStep.value.signInStep) {
     case "CONFIRM_SIGN_IN_WITH_SMS_CODE":
-      return "Enter the code you received";
+      return "輸入傳送至裝置的驗證碼";
     case "CONFIRM_SIGN_IN_WITH_TOTP_CODE":
-      return "Enter your authenticator code";
+      return "請輸入驗證器 App 的六位數密碼";
     case "CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED":
-      return "Enter a new password";
+      return "請設定新的密碼";
     default:
-      return "Verification";
+      return "驗證";
   }
 });
 
@@ -214,11 +230,7 @@ watch(showReset, (value) => {
   if (value) {
     resetEmail.value = formEmail.value.trim();
   } else {
-    resetStep.value = "request";
-    resetCode.value = "";
-    resetNewPassword.value = "";
-    resetMessage.value = "";
-    resetError.value = "";
+    resetFlowToRequest();
   }
   authStore.clearError();
 });
@@ -236,7 +248,9 @@ async function onSubmit() {
       form1Password.value = "";
       await router.push({ name: "qrcode" });
       return;
-    } else if (needsChallenge.value) {
+    }
+
+    if (needsChallenge.value) {
       const response = await authStore.completeSignIn(challengeResponse.value.trim());
 
       if (response.isSignedIn) {
@@ -281,7 +295,7 @@ function describeNextStep(step) {
     case "CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE":
       return "請完成額外的驗證步驟";
     case "RESET_PASSWORD":
-      return "需要重設密碼，請透過「Forgot password?」連結進行";
+      return "需要重設密碼，請透過「忘記密碼？」進行";
     default:
       return `需要完成額外步驟：${step.signInStep}`;
   }
@@ -298,7 +312,6 @@ function resetFlowToRequest() {
   resetNewPassword.value = "";
   resetMessage.value = "";
   resetError.value = "";
-  authStore.clearError();
 }
 
 async function handleResetRequest() {
@@ -384,137 +397,231 @@ function closeResetPanel() {
 </script>
 
 <style scoped>
-.login-section {
-  width: 300px;
+.login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(24px, 6vw, 64px) 16px;
 }
 
-.login-section__error {
-  margin-top: 1rem;
-  color: #c03546;
-  font-size: 0.9rem;
+.login__card {
+  width: min(420px, 100%);
+  background: rgba(9, 11, 23, 0.2);
+  border-radius: 24px;
+  padding: clamp(32px, 6vw, 48px);
+  box-shadow: 0 30px 80px rgba(8, 12, 28, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.login-section__hint {
-  margin-top: 0.75rem;
-  color: #0b7285;
+.login__title {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 1.9rem);
+  color: #f5f6ff;
+  text-align: center;
+}
+
+.login__subtitle {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.login__form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.login__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.login__field span {
   font-size: 0.85rem;
+  letter-spacing: 0.3px;
+  color: rgba(245, 246, 255, 0.7);
 }
 
-.login-section__link {
+.login__field input {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(5, 6, 15, 0.7);
+  color: #f5f6ff;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login__field input:focus {
+  outline: none;
+  border-color: rgba(111, 76, 255, 0.8);
+  box-shadow: 0 0 0 3px rgba(111, 76, 255, 0.2);
+}
+
+.login__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.login__remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: rgba(245, 246, 255, 0.75);
+}
+
+.login__remember input {
+  width: 16px;
+  height: 16px;
+  accent-color: #7a63ff;
+}
+
+.login__submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, rgba(233, 30, 99, 0.85), rgba(121, 63, 233, 0.92));
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.login__submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+  transform: none;
+}
+
+.login__submit:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 44px rgba(111, 66, 193, 0.35);
+}
+
+.login__hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(245, 246, 255, 0.78);
+  line-height: 1.6;
+}
+
+.login__error {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 140, 140, 0.95);
+}
+
+.login__success {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(135, 231, 189, 0.92);
+}
+
+.login__link {
   background: none;
   border: none;
-  color: #6c63ff;
+  color: rgba(184, 183, 255, 0.88);
+  font-size: 0.85rem;
+  font-weight: 600;
   letter-spacing: 0.3px;
   cursor: pointer;
   padding: 0;
   transition: color 0.2s ease, opacity 0.2s ease;
 }
 
-.login-section__link:disabled {
+.login__link:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.login-section__link:not(:disabled):hover {
-  color: #8a84ff;
+.login__link:not(:disabled):hover {
+  color: #fff;
   text-decoration: underline;
 }
 
-.spinner {
+.login__link--back {
+  align-self: center;
+  margin-top: 8px;
+}
+
+.login__spinner {
   display: inline-block;
   width: 1rem;
   height: 1rem;
-  margin-right: 0.5rem;
   border: 0.15rem solid rgba(255, 255, 255, 0.3);
   border-top-color: #fff;
   border-radius: 50%;
-  animation: spin 0.75s linear infinite;
-  vertical-align: middle;
+  animation: login__spin 0.75s linear infinite;
 }
 
-@keyframes spin {
+@keyframes login__spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-.reset-card {
-  margin-top: 1.5rem;
-  padding: 1.5rem;
-  background: rgba(12, 15, 28, 0.85);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 18px 40px rgba(8, 12, 28, 0.35);
+.login__reset {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 18px;
 }
 
-.reset-card__title {
-  font-size: 1.1rem;
+.login__reset-title {
+  margin: 0;
+  font-size: 1.2rem;
   font-weight: 600;
-  margin-bottom: 0.25rem;
   color: #f5f6ff;
 }
 
-.reset-card__hint {
-  font-size: 0.85rem;
-  color: rgba(245, 246, 255, 0.75);
-  margin-bottom: 0.5rem;
-}
-
-.reset-card__actions,
-.reset-card__verify,
-.reset-card__success {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.reset-card__links {
+.login__reset-actions {
   display: flex;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 12px;
 }
 
-.reset-card__link {
-  background: none;
-  border: none;
-  color: rgba(245, 246, 255, 0.75);
-  font-size: 0.78rem;
-  text-decoration: underline;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.2s ease, opacity 0.2s ease;
-}
-
-.reset-card__link:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.reset-card__link:not(:disabled):hover {
-  color: #b8b7ff;
-}
-
-.reset-card__message {
-  font-size: 0.82rem;
-  color: rgba(245, 246, 255, 0.85);
-}
-
-.reset-card__error {
-  font-size: 0.82rem;
-  color: rgba(255, 140, 140, 0.95);
-}
-
-.login-section-fade-enter-active,
-.login-section-fade-leave-active {
+.login__fade-enter-active,
+.login__fade-leave-active {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.login-section-fade-enter-from,
-.login-section-fade-leave-to {
+.login__fade-enter-from,
+.login__fade-leave-to {
   opacity: 0;
-  transform: translateY(-6px);
+  transform: translateY(6px);
+}
+
+@media (max-width: 540px) {
+  .login__actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .login__reset-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .login__link--back {
+    align-self: stretch;
+    text-align: center;
+  }
 }
 </style>

@@ -1,5 +1,4 @@
 <script setup>
-import bgImage from "@/assets/images/logo.png";
 import LoginSection from "./LoginSection.vue";
 import { onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
@@ -25,21 +24,6 @@ watch(
 );
 </script>
 
-<style>
-.welcome {
-  width: 100%;
-  height: 100%;
-  background-position: center;
-  background-size: contain;
-  background-repeat: no-repeat;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-</style>
-
 <template>
-  <div class="welcome">
-    <LoginSection v-if="!isAuthenticated" />
-  </div>
+  <LoginSection v-if="!isAuthenticated" />
 </template>
