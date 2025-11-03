@@ -216,8 +216,6 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: center;
   padding: clamp(24px, 6vw, 64px) 16px 32px;
-  background: radial-gradient(circle at 20% 20%, rgba(61, 92, 255, 0.28), transparent 45%),
-    radial-gradient(circle at 80% 0%, rgba(233, 30, 99, 0.3), transparent 40%), #05060f;
   color: #f5f6ff;
 }
 
@@ -225,11 +223,11 @@ onBeforeUnmount(() => {
   width: min(960px, 100%);
   display: flex;
   flex-direction: column;
-  background: rgba(9, 11, 23, 0.82);
+  background: rgba(9, 11, 23, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 28px;
   box-shadow: 0 30px 80px rgba(8, 12, 28, 0.55);
-  backdrop-filter: blur(22px);
+  backdrop-filter: blur(6px);
   overflow: hidden;
 }
 

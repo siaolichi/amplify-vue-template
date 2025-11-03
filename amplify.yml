@@ -18,8 +18,3 @@ frontend:
     paths:
       - .npm/**/*
       - node_modules/**/*
-
-customRules:
-  - source: "</^[^.]+$|\\.(?!(js|css|json|png|jpg|jpeg|svg|ico|txt|glb)$)([^.]+$)/>"
-    target: /index.html
-    status: 200
