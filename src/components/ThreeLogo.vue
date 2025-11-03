@@ -19,6 +19,8 @@ import {
 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
+import logoModelUrl from "@/assets/models/logo.glb";
+
 const container = ref(null);
 
 let renderer;
@@ -109,10 +111,10 @@ onMounted(() => {
   renderer.domElement.style.background = "transparent";
   resizeRenderer();
   window.addEventListener("resize", resizeRenderer);
-  const modelUrl = `${import.meta.env.BASE_URL}models/logo.glb`;
+
   const loader = new GLTFLoader();
   loader.load(
-    modelUrl,
+    logoModelUrl,
     (gltf) => {
       const baseMaterial = new MeshStandardMaterial({
         color: 0xe0b3ff,
