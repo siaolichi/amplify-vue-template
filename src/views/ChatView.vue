@@ -79,6 +79,10 @@ const messages = ref([
   createMessage("assistant", "你好，MiraMirage 已經消失了四個月。給我一個時間，我可以告訴你發生什麼事。"),
 ]);
 
+function updateViewportHeight() {
+  document.documentElement.style.setProperty("--chat-view-height", `${window.innerHeight}px`);
+}
+
 function createMessage(role, content) {
   messageId += 1;
   return {
@@ -203,16 +207,21 @@ onMounted(() => {
   scrollToBottom();
   inputRef.value?.focus();
   startInactivityWatcher();
+  updateViewportHeight();
+  window.addEventListener("resize", updateViewportHeight);
 });
 
 onBeforeUnmount(() => {
   stopInactivityWatcher();
+  window.removeEventListener("resize", updateViewportHeight);
+  document.documentElement.style.removeProperty("--chat-view-height");
 });
 </script>
 
 <style scoped lang="scss">
 .chat-view {
-  height: 100vh;
+  min-height: calc(var(--chat-view-height, 100vh));
+  height: calc(var(--chat-view-height, 100vh));
   display: flex;
   justify-content: center;
   padding: clamp(24px, 6vw, 64px) 16px 32px;
