@@ -52,9 +52,6 @@ function initScene() {
   const fillLight = new DirectionalLight(0xffffff, 10);
   fillLight.position.set(-4, -3, -6);
   scene.add(fillLight);
-
-  const helper = new DirectionalLightHelper(keyLight, 5);
-  scene.add(helper);
 }
 
 function initCamera(width, height) {
