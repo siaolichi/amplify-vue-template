@@ -19,7 +19,7 @@ import {
 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
-import logoModelUrl from "@/assets/models/logo.glb";
+import logoModelUrl from "@/assets/models/logo.glb?url";
 
 const container = ref(null);
 
