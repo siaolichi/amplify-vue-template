@@ -125,8 +125,8 @@ onMounted(() => {
         color: 0xe0b3ff,
         metalness: 1,
         roughness: 0,
-        emissive: 0xffffff,
-        emissiveIntensity: 0,
+        emissive: 0x000000,
+        emissiveIntensity: 1,
       });
 
       gltf.scene.traverse((child) => {

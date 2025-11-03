@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboard" :style="{ backgroundImage: `url(${bgImage})` }">
+  <div class="dashboard">
     <WarningCard v-if="showSuccessCard" @on-click="onClickCard" />
     <div class="dashboard__container">
       <div class="dashboard__header" :aria-busy="loadingProfile">
@@ -87,7 +87,6 @@ import { generateClient } from "aws-amplify/data";
 import LoadingIndicator from "@/components/LoadingIndicator.vue";
 import WarningCard from "@/components/WarningCard.vue";
 import { useAuthStore } from "../stores/auth";
-import bgImage from "@/assets/images/logo.png";
 
 const dataClient = generateClient();
 
