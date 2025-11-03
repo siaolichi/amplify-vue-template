@@ -41,8 +41,6 @@ function onClickSkip() {
 main {
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at 15% 20%, rgba(68, 63, 233, 0.14), transparent 52%),
-    radial-gradient(circle at 80% 0%, rgba(233, 30, 99, 0.18), transparent 56%), #05060f;
 }
 .video-background {
   &__wrapper {

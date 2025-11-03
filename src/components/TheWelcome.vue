@@ -39,7 +39,7 @@ watch(
 </style>
 
 <template>
-  <div class="welcome" :style="{ backgroundImage: `url(${bgImage})` }">
+  <div class="welcome">
     <LoginSection v-if="!isAuthenticated" />
   </div>
 </template>
