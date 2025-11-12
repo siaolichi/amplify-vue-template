@@ -1,5 +1,5 @@
 <template>
-  <main class="login">
+  <div class="login">
     <section class="login__card">
       <h1 class="login__title">登入 Dreamlog</h1>
       <p class="login__subtitle">
@@ -145,7 +145,7 @@
         </div>
       </transition>
     </section>
-  </main>
+  </div>
 </template>
 
 <script setup>
@@ -402,7 +402,6 @@ function closeResetPanel() {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(24px, 6vw, 64px) 16px;
 }
 
 .login__card {

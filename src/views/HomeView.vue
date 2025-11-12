@@ -1,5 +1,5 @@
 <template>
-  <main>
+  <div class="home">
     <!-- <div class="video-background__wrapper" v-if="!showWelcomePage">
       <video
         autoplay
@@ -19,7 +19,7 @@
       <div class="video-background__skip-button" @click="onClickSkip">SKIP<br />INTRO</div>
     </div> -->
     <TheWelcome v-if="showWelcomePage" />
-  </main>
+  </div>
 </template>
 
 <script setup>
@@ -38,7 +38,7 @@ function onClickSkip() {
 </script>
 
 <style lang="scss">
-main {
+.home {
   width: 100%;
   height: 100%;
 }
@@ -46,7 +46,7 @@ main {
   &__wrapper {
     position: relative;
     width: 100%;
-    height: 100vh;
+    height: 100%;
     overflow: hidden;
   }
   &__skip {
