@@ -38,8 +38,9 @@
   font-family: Roboto, Helvetica, Arial, sans-serif;
 }
 body {
-  height: 100vh;
+  height: 100%;
   width: 100%;
+  overflow: hidden;
   margin: 0;
   padding: 0;
 }
