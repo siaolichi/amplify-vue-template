@@ -291,7 +291,7 @@ function createCard(entry, index) {
 
   const image = property.image ?? "";
 
-  const mintedSource = property.minted_at ?? entry.date;
+  const mintedSource = property.minted_at ?? entry.date ;
 
   return finalizeCard(
     {
