@@ -1,9 +1,10 @@
 import { generateClient } from "aws-amplify/data";
 
 const DEFAULT_COLLECTION_NAME = "Mira's room";
-const dataClient = generateClient();
+
 
 export async function ensureCollectionForUser(currentUser) {
+  const dataClient = generateClient();
   const userId = currentUser?.userId;
   if (!userId) return;
 
