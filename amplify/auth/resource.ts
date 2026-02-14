@@ -7,9 +7,11 @@ import { defineAuth } from '@aws-amplify/backend';
 export const auth = defineAuth({
   loginWith: {
     email: {
-      otpLogin: true // Enable email OTP
-    }
-  }
+       // 或 "LINK"
+        verificationEmailSubject: "歡迎來到夢域誌 DreamLog",
+        verificationEmailBody: (createCode: () => string) => `您的驗證碼是：${createCode()}`,
+          }
+        }
   // senders: {
   //   email: {
   //     fromEmail: "registrations@37-studio.com",
