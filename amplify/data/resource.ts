@@ -12,7 +12,7 @@ const schema = a.schema({
       user: a.string(),
       property:a.json()
     })
-    .authorization(allow => [allow.owner()]),
+    .authorization((allow: { owner: () => any; }) => [allow.owner()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
