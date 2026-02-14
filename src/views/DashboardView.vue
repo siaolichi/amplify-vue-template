@@ -1,40 +1,68 @@
 <template>
   <div class="dashboard">
     <WarningCard v-if="showSuccessCard" @on-click="onClickCard" />
+
     <div class="dashboard__container">
-      <div class="dashboard__header" :aria-busy="loadingProfile">
-        <div class="dashboard__header-title">
-          <form class="dashboard__form" @submit.prevent="handleSubmit">
-            <label class="sr-only" for="nickname">暱稱</label>
-            <input
-              id="nickname"
-              v-model="nickname"
-              class="dashboard__input"
-              type="text"
-              placeholder="輸入你的暱稱"
-              required
-              :disabled="saving || loadingProfile"
-            />
-            <button type="submit" class="dashboard__button" :disabled="!nickname.trim() || saving">
-              {{ saving ? "儲存中..." : "儲存暱稱" }}
-            </button>
-          </form>
-          <button type="button" class="dashboard__logout" @click="handleLogout" :disabled="loadingLogout || saving">
-            {{ loadingLogout ? "登出中..." : "登出" }}
-          </button>
+      <section class="profile" :aria-busy="loadingProfile">
+        <div class="profile__avatar-wrap">
+          <img v-if="profile.avatarUrl" :src="profile.avatarUrl" alt="User avatar" class="profile__avatar" />
+          <div v-else class="profile__avatar profile__avatar--fallback">{{ avatarInitial }}</div>
         </div>
-      </div>
-      <div class="dashboard__messages" aria-live="polite">
-        <p v-if="message" class="dashboard__hint">
-          {{ message }}
-        </p>
-        <p v-if="submittedNickname" class="dashboard__hint">
-          目前暱稱：<strong>{{ submittedNickname }}</strong>
-        </p>
-        <p v-if="errorMessage" class="dashboard__error" role="alert">
-          {{ errorMessage }}
-        </p>
-      </div>
+
+        <div class="profile__content">
+          <div class="profile__header">
+            <h2 class="profile__title">個人檔案</h2>
+            <div class="profile__actions">
+              <button v-if="!isEditing" type="button" class="profile__button" @click="startEditing" :disabled="loadingProfile || savingProfile">
+                編輯
+              </button>
+              <template v-else>
+                <button type="button" class="profile__button" @click="saveProfile" :disabled="savingProfile">
+                  {{ savingProfile ? "儲存中..." : "儲存" }}
+                </button>
+                <button type="button" class="profile__button profile__button--ghost" @click="cancelEditing" :disabled="savingProfile">
+                  取消
+                </button>
+              </template>
+              <button type="button" class="profile__button profile__button--ghost" @click="handleLogout" :disabled="loadingLogout || savingProfile">
+                {{ loadingLogout ? "登出中..." : "登出" }}
+              </button>
+            </div>
+          </div>
+
+          <div class="profile__fields">
+            <label class="profile__field">
+              <span>暱稱</span>
+              <input v-if="isEditing" v-model.trim="draftProfile.nickname" type="text" placeholder="暱稱" />
+              <p v-else>{{ profile.nickname || "-" }}</p>
+            </label>
+
+            <label class="profile__field">
+              <span>興趣</span>
+              <input v-if="isEditing" v-model.trim="draftProfile.interest" type="text" placeholder="興趣愛好" />
+              <p v-else>{{ profile.interest || "-" }}</p>
+            </label>
+
+            <label class="profile__field">
+              <span>專長</span>
+              <input v-if="isEditing" v-model.trim="draftProfile.expertise" type="text" placeholder="專長" />
+              <p v-else>{{ profile.expertise || "-" }}</p>
+            </label>
+
+            <label class="profile__field">
+              <span>個性</span>
+              <input v-if="isEditing" v-model.trim="draftProfile.personality" type="text" placeholder="個性特質" />
+              <p v-else>{{ profile.personality || "-" }}</p>
+            </label>
+          </div>
+
+          <div class="dashboard__messages" aria-live="polite">
+            <p v-if="profileMessage" class="dashboard__hint">{{ profileMessage }}</p>
+            <p v-if="profileError" class="dashboard__error" role="alert">{{ profileError }}</p>
+          </div>
+        </div>
+      </section>
+
       <Collections
         :loading-cards="loadingCards"
         :collection-hint="collectionHint"
@@ -58,10 +86,6 @@ import { useAuthStore } from "../stores/auth";
 const dataClient = generateClient();
 
 const showSuccessCard = ref(true);
-const nickname = ref("");
-const submittedNickname = ref("");
-const saving = ref(false);
-const message = ref("");
 const errorMessage = ref("");
 const loadingLogout = ref(false);
 
@@ -69,12 +93,38 @@ const authStore = useAuthStore();
 const router = useRouter();
 
 const loadingProfile = ref(true);
+const savingProfile = ref(false);
+const isEditing = ref(false);
+
+const profileMessage = ref("");
+const profileError = ref("");
+
+const profile = ref({
+  avatarUrl: "",
+  nickname: "",
+  interest: "",
+  expertise: "",
+  personality: "",
+});
+
+const draftProfile = ref({
+  nickname: "",
+  interest: "",
+  expertise: "",
+  personality: "",
+});
+
 const loadingCards = ref(true);
 const loadingDashboard = computed(() => loadingProfile.value || loadingCards.value);
 
 const cardCollection = ref([]);
 const collectionError = ref("");
 const collectionStatus = ref("");
+
+const avatarInitial = computed(() => {
+  const source = (profile.value.nickname || "U").trim();
+  return source ? source.charAt(0).toUpperCase() : "U";
+});
 
 const collectionHint = computed(() => {
   if (loadingDashboard.value) {
@@ -86,48 +136,6 @@ const collectionHint = computed(() => {
   return collectionStatus.value || "還沒有同步任何物件。";
 });
 
-async function handleSubmit() {
-  const trimmed = nickname.value.trim();
-  if (!trimmed) return;
-  saving.value = true;
-  errorMessage.value = "";
-  message.value = "";
-
-  try {
-    await updateUserAttribute({
-      userAttribute: {
-        attributeKey: "nickname",
-        value: trimmed,
-      },
-    });
-    submittedNickname.value = trimmed;
-    message.value = "暱稱已成功更新。";
-  } catch (error) {
-    errorMessage.value = error?.message ?? "更新暱稱時發生錯誤，請稍後再試。";
-  } finally {
-    saving.value = false;
-  }
-}
-
-async function handleLogout() {
-  if (!authStore?.logout || loadingLogout.value) return;
-
-  loadingLogout.value = true;
-  message.value = "";
-  errorMessage.value = "";
-
-  try {
-    await authStore.logout();
-    nickname.value = "";
-    submittedNickname.value = "";
-    router.push({ name: "home" });
-  } catch (error) {
-    errorMessage.value = error?.message ?? "登出時發生錯誤，請稍後再試。";
-  } finally {
-    loadingLogout.value = false;
-  }
-}
-
 onMounted(() => {
   loadProfile();
   loadCardCollection();
@@ -135,19 +143,128 @@ onMounted(() => {
 
 async function loadProfile() {
   loadingProfile.value = true;
+  profileError.value = "";
+
   try {
     const attributes = await fetchUserAttributes();
-    if (attributes?.nickname) {
-      nickname.value = attributes.nickname;
-      submittedNickname.value = attributes.nickname;
-    }
+
+    const nextProfile = {
+      avatarUrl: attributes?.picture ?? attributes?.["custom:avatarUrl"] ?? "",
+      nickname: attributes?.nickname ?? "",
+      interest: attributes?.["custom:interest"] ?? "",
+      expertise: attributes?.["custom:expertise"] ?? "",
+      personality: attributes?.["custom:personality"] ?? "",
+    };
+
+    profile.value = nextProfile;
+    draftProfile.value = {
+      nickname: nextProfile.nickname,
+      interest: nextProfile.interest,
+      expertise: nextProfile.expertise,
+      personality: nextProfile.personality,
+    };
   } catch (error) {
-    errorMessage.value = authStore?.user ? "載入暱稱時發生錯誤，請稍後再試。" : "請先登入後再設定暱稱。";
+    profileError.value = error?.message ?? "Ū���򥻸�ƥ���";
     if (import.meta?.env?.DEV) {
-      console.debug("載入暱稱時發生錯誤：", error);
+      console.debug("Failed to load profile:", error);
     }
   } finally {
     loadingProfile.value = false;
+  }
+}
+
+function startEditing() {
+  profileMessage.value = "";
+  profileError.value = "";
+  draftProfile.value = {
+    nickname: profile.value.nickname,
+    interest: profile.value.interest,
+    expertise: profile.value.expertise,
+    personality: profile.value.personality,
+  };
+  isEditing.value = true;
+}
+
+function cancelEditing() {
+  isEditing.value = false;
+  draftProfile.value = {
+    nickname: profile.value.nickname,
+    interest: profile.value.interest,
+    expertise: profile.value.expertise,
+    personality: profile.value.personality,
+  };
+}
+
+async function saveProfile() {
+  savingProfile.value = true;
+  profileError.value = "";
+  profileMessage.value = "";
+
+  try {
+    const next = {
+      nickname: draftProfile.value.nickname.trim(),
+      interest: draftProfile.value.interest.trim(),
+      expertise: draftProfile.value.expertise.trim(),
+      personality: draftProfile.value.personality.trim(),
+    };
+
+    await updateUserAttribute({
+      userAttribute: {
+        attributeKey: "nickname",
+        value: next.nickname,
+      },
+    });
+
+    await updateUserAttribute({
+      userAttribute: {
+        attributeKey: "custom:interest",
+        value: next.interest,
+      },
+    });
+
+    await updateUserAttribute({
+      userAttribute: {
+        attributeKey: "custom:expertise",
+        value: next.expertise,
+      },
+    });
+
+    await updateUserAttribute({
+      userAttribute: {
+        attributeKey: "custom:personality",
+        value: next.personality,
+      },
+    });
+
+    profile.value = {
+      ...profile.value,
+      ...next,
+    };
+
+    isEditing.value = false;
+    profileMessage.value = "角色資料更新成功";
+  } catch (error) {
+    errorMessage.value = error?.message ?? "更新角色資料時發生錯誤，請稍後再試。";
+    console.error("Failed to save profile:", error);
+  } finally {
+    savingProfile.value = false;
+  }
+}
+
+async function handleLogout() {
+  if (!authStore?.logout || loadingLogout.value) return;
+
+  loadingLogout.value = true;
+  profileMessage.value = "";
+  profileError.value = "";
+
+  try {
+    await authStore.logout();
+    router.push({ name: "home" });
+  } catch (error) {
+    errorMessage.value = error?.message ?? "登出時發生錯誤，請稍後再試。";
+  } finally {
+    loadingLogout.value = false;
   }
 }
 
@@ -164,7 +281,7 @@ async function loadCardCollection() {
   } catch (error) {
     collectionError.value = error?.message ?? "讀取物件資料時發生錯誤，請稍後再試。";
     if (import.meta?.env?.DEV) {
-      console.debug("讀取物件資料時發生錯誤：", error);
+      console.debug("Failed to load collection:", error);
     }
   } finally {
     loadingCards.value = false;
@@ -280,18 +397,39 @@ function buildNormalizedCards(payload) {
 function createCard(entry, index) {
   if (entry == null) return null;
 
+  if (typeof entry === "string" || typeof entry === "number") {
+    const title = String(entry).trim();
+    if (!title) return null;
+    return finalizeCard(
+      {
+        id: `card-${index + 1}`,
+        title,
+      },
+      index
+    );
+  }
+
   if (typeof entry !== "object") return null;
 
-  const property = JSON.parse(entry.property);
+  const id =
+    entry.id ??
+    entry.tokenId ??
+    entry.tokenID ??
+    entry.slug ??
+    entry.key ??
+    entry.uuid ??
+    entry.code ??
+    `card-${index + 1}`;
 
-  const id = entry.id ??  `card-${index + 1}`;
+  const title = entry.title ?? entry.name ?? entry.cardName ?? entry.displayName ?? entry.label ?? entry.nickname ?? `Card ${index + 1}`;
 
-  const title = property.name ?? `物件 ${index + 1}`;
-  const description = property.description ?? "";
+  const description =
+    entry.description ?? entry.story ?? entry.flavorText ?? entry.detail ?? entry.summary ?? entry.text ?? "";
 
-  const image = property.image ?? "";
+  const image = entry.image ?? entry.imageUrl ?? entry.imageURL ?? entry.art ?? entry.artwork ?? entry.thumbnail ?? "";
 
-  const mintedSource = property.minted_at ?? entry.date ;
+  const mintedSource =
+    entry.mintedAt ?? entry.createdAt ?? entry.timestamp ?? entry.mintTime ?? entry.minted_at ?? entry.date;
 
   return finalizeCard(
     {
@@ -335,7 +473,6 @@ function formatMintedAt(value) {
     return date.toLocaleString();
   }
 }
-
 </script>
 
 <style scoped lang="scss">
@@ -353,106 +490,126 @@ function formatMintedAt(value) {
   padding: 24px;
 }
 
-.dashboard__header {
+.profile {
   background: rgba(14, 18, 35, 0.9);
   border-radius: 28px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 26px 60px rgba(8, 12, 28, 0.45);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: stretch;
-  padding: 16px;
-  &-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    flex-wrap: wrap;
-    gap: 16px;
-  }
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
 }
 
-.dashboard__form {
-  display: inline-flex;
-  flex-grow: 1;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-start;
+.profile__avatar-wrap {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.profile__avatar {
+  width: 250px;
+  height: 250px;
+  border-radius: 30px;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  background: rgba(5, 6, 15, 0.72);
+}
+
+.profile__avatar--fallback {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 3rem;
+  font-weight: 700;
+}
+
+.profile__content {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
-.dashboard__input {
-  min-width: 220px;
-  padding: 14px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(5, 6, 15, 0.72);
-  color: #f5f6ff;
-  font-size: 1rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+.profile__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.dashboard__input:focus {
-  outline: none;
-  border-color: rgba(111, 76, 255, 0.8);
-  box-shadow: 0 0 0 3px rgba(111, 76, 255, 0.2);
+.profile__title {
+  font-size: 1.2rem;
+  font-weight: 700;
 }
 
-.dashboard__button {
-  padding: 14px 20px;
-  border-radius: 18px;
+.profile__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.profile__button {
+  padding: 10px 14px;
+  border-radius: 12px;
   border: none;
   background: linear-gradient(135deg, rgba(233, 30, 99, 0.85), rgba(121, 63, 233, 0.92));
   color: #fff;
   font-weight: 600;
-  letter-spacing: 0.4px;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
-.dashboard__button:disabled {
-  cursor: not-allowed;
+.profile__button--ghost {
+  background: rgba(5, 6, 15, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.profile__button:disabled {
   opacity: 0.6;
-  box-shadow: none;
-  transform: none;
+  cursor: not-allowed;
 }
 
-.dashboard__button:not(:disabled):hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 44px rgba(111, 66, 193, 0.35);
+.profile__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
 }
 
-.dashboard__logout {
-  padding: 12px 18px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(5, 6, 15, 0.45);
+.profile__field {
+  display: grid;
+  gap: 6px;
+}
+
+.profile__field span {
+  font-size: 0.82rem;
+  color: rgba(245, 246, 255, 0.72);
+}
+
+.profile__field input {
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(5, 6, 15, 0.72);
   color: #f5f6ff;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 }
 
-.dashboard__logout:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-  transform: none;
-}
-
-.dashboard__logout:not(:disabled):hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.24);
-  transform: translateY(-1px);
+.profile__field p {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(5, 6, 15, 0.45);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
 }
 
 .dashboard__messages {
   min-height: 24px;
   display: grid;
   gap: 6px;
-  max-width: 680px;
-  padding-left: 24px;
 }
 
 .dashboard__hint {
@@ -465,50 +622,19 @@ function formatMintedAt(value) {
   color: rgba(255, 140, 140, 0.95);
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
 @media (max-width: 960px) {
-  .dashboard__header {
-    justify-content: stretch;
+  .profile {
+    grid-template-columns: 1fr;
   }
 
-  .dashboard__logout {
-    width: 100%;
-    text-align: center;
+  .profile__avatar-wrap {
+    justify-content: flex-start;
   }
 }
 
 @media (max-width: 720px) {
-  .dashboard__form {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .dashboard__input {
-    width: 100%;
-  }
-
-  .dashboard__button {
-    width: 100%;
+  .profile__fields {
+    grid-template-columns: 1fr;
   }
 }
 </style>
-
-
-
-
-
-
-
-
-

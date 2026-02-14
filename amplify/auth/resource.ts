@@ -9,5 +9,25 @@ export const auth = defineAuth({
     email: {
       otpLogin: true
     }
+  },
+  userAttributes: {
+    "custom:interest": {
+      dataType: "String",
+      mutable: true,
+      minLen: 0,
+      maxLen: 256,
+    },
+    "custom:expertise": {
+      dataType: "String",
+      mutable: true,
+      minLen: 0,
+      maxLen: 256,
+    },
+    "custom:personality": {
+      dataType: "String",
+      mutable: true,
+      minLen: 0,
+      maxLen: 256,
+    },
   }
 });
