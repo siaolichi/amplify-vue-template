@@ -35,45 +35,12 @@
           {{ errorMessage }}
         </p>
       </div>
-      <div class="collection" aria-labelledby="collection-title" :aria-busy="loadingCards">
-        <div class="collection__header">
-          <div>
-            <h2 id="collection-title" class="collection__title">夢境收藏庫</h2>
-            <p class="collection__subtitle">物件收藏</p>
-          </div>
-          <p class="collection__status">{{ collectionHint }}</p>
-        </div>
-
-        <LoadingIndicator v-if="loadingCards" message="載入收藏中..." />
-        <template v-else>
-          <p v-if="collectionError" class="collection__error" role="alert">
-            {{ collectionError }}
-          </p>
-          <div v-else class="card-grid" role="list">
-            <article v-for="card in cardCollection" :key="card.id" class="card-grid__item" role="listitem">
-              <div class="card-grid__frame" :class="`card-grid__frame--${card.rarityClass}`">
-                <div v-if="card.image" class="card-grid__image">
-                  <img :src="card.image" :alt="`${card.title} 圖像`" loading="lazy" />
-                </div>
-                <div class="card-grid__body">
-                  <span v-if="card.rarity" class="card-grid__rarity">{{ card.rarity }}</span>
-                  <h3 class="card-grid__title">{{ card.title }}</h3>
-                  <p v-if="card.description" class="card-grid__description">
-                    {{ card.description }}
-                  </p>
-                  <ul v-if="card.traits.length" class="card-grid__traits">
-                    <li v-for="trait in card.traits" :key="trait.key" class="card-grid__trait">
-                      <span class="card-grid__trait-label">{{ trait.label }}</span>
-                      <span class="card-grid__trait-value">{{ trait.value }}</span>
-                    </li>
-                  </ul>
-                  <p v-if="card.mintedAt" class="card-grid__minted">鑄造於 {{ card.mintedAt }}</p>
-                </div>
-              </div>
-            </article>
-          </div>
-        </template>
-      </div>
+      <Collections
+        :loading-cards="loadingCards"
+        :collection-hint="collectionHint"
+        :collection-error="collectionError"
+        :card-collection="cardCollection"
+      />
     </div>
   </div>
 </template>
@@ -84,7 +51,7 @@ import { useRouter } from "vue-router";
 import { fetchUserAttributes, updateUserAttribute } from "aws-amplify/auth";
 import { generateClient } from "aws-amplify/data";
 
-import LoadingIndicator from "@/components/LoadingIndicator.vue";
+import Collections from "@/components/Collections.vue";
 import WarningCard from "@/components/WarningCard.vue";
 import { useAuthStore } from "../stores/auth";
 
@@ -260,15 +227,15 @@ async function fetchCardsFromData() {
 
 function detectCardModelCandidates() {
   const runtimeModels = Object.keys(dataClient?.models ?? {});
-  const preferred = ["Card", "Cards", "NFTCard", "NftCard", "NftCollection", "Collection"];
+  const preferred = ["Collection"];
   const ordered = [...preferred, ...runtimeModels];
   return ordered.filter((value, index, array) => value && array.indexOf(value) === index);
 }
 
 function dedupeCards(cards) {
   const map = new Map();
-  cards.forEach((card) => {
-    const key = card.id ?? `${card.title}-${card.rarity}`;
+  cards.forEach((card, index) => {
+    const key = card.id ?? `${card.title}-${index}`;
     if (!map.has(key)) {
       map.set(key, card);
     }
@@ -313,59 +280,26 @@ function buildNormalizedCards(payload) {
 function createCard(entry, index) {
   if (entry == null) return null;
 
-  if (typeof entry === "string" || typeof entry === "number") {
-    const title = String(entry).trim();
-    if (!title) return null;
-    return finalizeCard(
-      {
-        id: `card-${index + 1}`,
-        title,
-      },
-      index
-    );
-  }
-
   if (typeof entry !== "object") return null;
 
-  const id =
-    entry.id ??
-    entry.tokenId ??
-    entry.tokenID ??
-    entry.slug ??
-    entry.key ??
-    entry.uuid ??
-    entry.code ??
-    `card-${index + 1}`;
+  const property = JSON.parse(entry.property);
 
-  const title =
-    entry.title ??
-    entry.name ??
-    entry.cardName ??
-    entry.displayName ??
-    entry.label ??
-    entry.nickname ??
-    `物件 ${index + 1}`;
+  const id = entry.id ??  `card-${index + 1}`;
 
-  const rarity = entry.rarity ?? entry.tier ?? entry.rank ?? entry.grade ?? entry.level ?? "";
-  const description =
-    entry.description ?? entry.story ?? entry.flavorText ?? entry.detail ?? entry.summary ?? entry.text ?? "";
+  const title = property.name ?? `物件 ${index + 1}`;
+  const description = property.description ?? "";
 
-  const image = entry.image ?? entry.imageUrl ?? entry.imageURL ?? entry.art ?? entry.artwork ?? entry.thumbnail ?? "";
+  const image = property.image ?? "";
 
-  const mintedSource =
-    entry.mintedAt ?? entry.createdAt ?? entry.timestamp ?? entry.mintTime ?? entry.minted_at ?? entry.date;
-
-  const cardTraits = entry.traits ?? entry.attributes ?? entry.properties ?? entry.stats ?? entry.features;
+  const mintedSource = property.minted_at ?? entry.date;
 
   return finalizeCard(
     {
       id,
       title,
-      rarity,
       description,
       image,
       mintedAt: formatMintedAt(mintedSource),
-      traits: buildTraits(cardTraits),
     },
     index
   );
@@ -375,84 +309,13 @@ function finalizeCard(card, index) {
   const safeTitle = (card.title ?? "").toString().trim();
   if (!safeTitle) return null;
 
-  const rarityLabel = (card.rarity ?? "").toString().trim();
-
   return {
     id: card.id ? String(card.id) : `card-${index + 1}`,
     title: safeTitle,
-    rarity: rarityLabel,
-    rarityClass: mapRarityToClass(rarityLabel),
     description: (card.description ?? "").toString().trim(),
     image: card.image ? String(card.image) : "",
-    traits: Array.isArray(card.traits) ? card.traits : [],
     mintedAt: card.mintedAt ? String(card.mintedAt) : "",
   };
-}
-
-function buildTraits(source) {
-  if (!source && source !== 0) return [];
-
-  if (Array.isArray(source)) {
-    return source.map((trait, index) => normalizeTrait(trait, index)).filter(Boolean);
-  }
-
-  if (typeof source === "object") {
-    return Object.entries(source)
-      .map(([label, value], index) => {
-        const stringValue = value == null ? "" : String(value).trim();
-        if (!stringValue) return null;
-        return {
-          key: `trait-${label}-${index}`,
-          label: label || `特性 ${index + 1}`,
-          value: stringValue,
-        };
-      })
-      .filter(Boolean);
-  }
-
-  if (typeof source === "string" || typeof source === "number") {
-    return String(source)
-      .split(/[\n,;|]/)
-      .map((fragment) => fragment.trim())
-      .filter(Boolean)
-      .map((value, index) => ({
-        key: `trait-${index}`,
-        label: "特性",
-        value,
-      }));
-  }
-
-  return [];
-}
-
-function normalizeTrait(trait, index) {
-  if (trait == null) return null;
-
-  if (typeof trait === "string" || typeof trait === "number") {
-    const value = String(trait).trim();
-    if (!value) return null;
-    return {
-      key: `trait-${index}`,
-      label: "特性",
-      value,
-    };
-  }
-
-  if (typeof trait === "object") {
-    const label = trait.label ?? trait.trait_type ?? trait.type ?? trait.name ?? trait.category ?? `特性 ${index + 1}`;
-    const value =
-      trait.value ?? trait.displayValue ?? trait.display_value ?? trait.amount ?? trait.score ?? trait.level;
-
-    if (value == null || value === "") return null;
-
-    return {
-      key: String(trait.id ?? trait.key ?? `${label}-${value}-${index}`),
-      label: String(label || `特性 ${index + 1}`),
-      value: String(value),
-    };
-  }
-
-  return null;
 }
 
 function formatMintedAt(value) {
@@ -473,18 +336,6 @@ function formatMintedAt(value) {
   }
 }
 
-function mapRarityToClass(rarity) {
-  const normalized = rarity?.toString().trim().toLowerCase();
-
-  if (!normalized) return "common";
-  if (normalized.includes("legendary") || normalized.includes("傳奇")) return "legendary";
-  if (normalized.includes("mythic") || normalized.includes("神話")) return "legendary";
-  if (normalized.includes("epic") || normalized.includes("史詩")) return "epic";
-  if (normalized.includes("rare") || normalized.includes("稀有")) return "rare";
-  if (normalized.includes("uncommon") || normalized.includes("罕見")) return "uncommon";
-
-  return "common";
-}
 </script>
 
 <style scoped lang="scss">
@@ -614,183 +465,6 @@ function mapRarityToClass(rarity) {
   color: rgba(255, 140, 140, 0.95);
 }
 
-.collection {
-  background: rgba(12, 15, 28, 0.88);
-  border-radius: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 34px 80px rgba(8, 12, 28, 0.45);
-  display: flex;
-  flex-direction: column;
-  padding: 24px;
-}
-
-.collection__header {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  justify-content: space-between;
-  align-items: flex-end;
-}
-
-.collection__title {
-  font-size: clamp(1.7rem, 3.2vw, 2rem);
-  font-weight: 700;
-}
-
-.collection__subtitle {
-  color: rgba(245, 246, 255, 0.68);
-  line-height: 1.6;
-}
-
-.collection__status {
-  font-size: 0.92rem;
-  color: rgba(245, 246, 255, 0.78);
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-
-.collection__error {
-  font-size: 0.9rem;
-  color: rgba(255, 144, 144, 0.96);
-  font-weight: 600;
-}
-
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: clamp(18px, 2vw, 26px);
-}
-
-.card-grid__item {
-  position: relative;
-}
-
-.card-grid__frame {
-  position: relative;
-  padding: 20px;
-  border-radius: 26px;
-  background: linear-gradient(160deg, rgba(18, 24, 52, 0.92), rgba(11, 14, 28, 0.92));
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 260px;
-  backdrop-filter: blur(18px);
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-}
-
-.card-grid__frame:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 26px 60px rgba(12, 14, 28, 0.45);
-}
-
-.card-grid__frame--common {
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-.card-grid__frame--uncommon {
-  border-color: rgba(104, 219, 182, 0.45);
-  box-shadow: 0 0 0 1px rgba(104, 219, 182, 0.35);
-}
-
-.card-grid__frame--rare {
-  border-color: rgba(122, 174, 255, 0.55);
-  box-shadow: 0 0 0 1px rgba(122, 174, 255, 0.4);
-}
-
-.card-grid__frame--epic {
-  border-color: rgba(191, 122, 255, 0.6);
-  box-shadow: 0 0 0 1px rgba(191, 122, 255, 0.45);
-  background: linear-gradient(160deg, rgba(39, 16, 53, 0.85), rgba(12, 17, 38, 0.92));
-}
-
-.card-grid__frame--legendary {
-  border-color: rgba(255, 196, 113, 0.7);
-  box-shadow: 0 0 0 1px rgba(255, 196, 113, 0.5), 0 18px 50px rgba(255, 196, 113, 0.25);
-  background: linear-gradient(160deg, rgba(55, 24, 3, 0.88), rgba(18, 14, 32, 0.92));
-}
-
-.card-grid__image {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  border-radius: 18px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.card-grid__image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.card-grid__body {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.card-grid__rarity {
-  align-self: flex-start;
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  letter-spacing: 0.4px;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.92);
-  text-transform: uppercase;
-}
-
-.card-grid__title {
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-
-.card-grid__description {
-  font-size: 0.9rem;
-  color: rgba(245, 246, 255, 0.78);
-  line-height: 1.6;
-}
-
-.card-grid__traits {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 10px;
-  margin: 4px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.card-grid__trait {
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(7, 10, 24, 0.68);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.card-grid__trait-label {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: rgba(245, 246, 255, 0.56);
-}
-
-.card-grid__trait-value {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: rgba(245, 246, 255, 0.92);
-}
-
-.card-grid__minted {
-  font-size: 0.8rem;
-  color: rgba(245, 246, 255, 0.6);
-}
-
 .sr-only {
   position: absolute;
   width: 1px;
@@ -812,10 +486,6 @@ function mapRarityToClass(rarity) {
     width: 100%;
     text-align: center;
   }
-
-  .collection__header {
-    align-items: flex-start;
-  }
 }
 
 @media (max-width: 720px) {
@@ -831,13 +501,14 @@ function mapRarityToClass(rarity) {
   .dashboard__button {
     width: 100%;
   }
-
-  .collection {
-    padding: clamp(24px, 6vw, 32px);
-  }
-
-  .card-grid {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  }
 }
 </style>
+
+
+
+
+
+
+
+
+

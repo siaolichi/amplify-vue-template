@@ -1,11 +1,9 @@
 <template>
   <main class="register">
     <section class="register__card">
-      <h1 class="register__title">建立你的夢域誌帳號 Dreamlog Register</h1>
+      <h1 class="register__title">Create account</h1>
       <p class="register__subtitle">
-        嗨，我是夢域誌的創作者。在這場計劃形的作品中，我打算嘗試在數位時代後的各種可能。<br />
-        從這件作品開始，每次的展覽、演出，或是相關場域，我都會藏一個 QRCode，這些 QRCode 裡會有我給各位的虛擬小禮物。<br />
-        要拿禮物首先要有個禮物箱，快點註冊帳號跟我一起在虛實中大亂鬥吧！
+        Register with email only. We will send a verification code to complete sign-up.
       </p>
 
       <form v-if="!needsConfirmation" class="register__form" @submit.prevent="handleSubmit">
@@ -13,40 +11,28 @@
           <span>Email</span>
           <input v-model.trim="email" type="email" placeholder="you@example.com" autocomplete="email" required />
         </label>
-        <label class="register__field">
-          <span>Password</span>
-          <input v-model="password" type="password" placeholder="輸入密碼" autocomplete="new-password" required />
-        </label>
-        <label class="register__field">
-          <span>Password Confirmation</span>
-          <input
-            v-model="passwordConfirmation"
-            type="password"
-            placeholder="再次輸入密碼"
-            autocomplete="new-password"
-            required
-          />
-        </label>
+
         <button type="submit" class="register__submit" :disabled="isSubmitDisabled">
           <span v-if="loading" class="register__spinner" aria-hidden="true" />
-          <span>註冊</span>
+          <span>Send verification code</span>
         </button>
       </form>
 
       <form v-else class="register__form" @submit.prevent="handleConfirm">
-        <p class="register__hint">我們已傳送驗證碼至 {{ maskedEmail }}，請輸入收到的六位數代碼完成註冊。</p>
+        <p class="register__hint">A verification code was sent to {{ maskedEmail }}. Enter it below.</p>
         <label class="register__field">
-          <span>驗證碼</span>
-          <input v-model.trim="confirmationCode" type="text" inputmode="numeric" placeholder="例如：123456" required />
+          <span>Verification code</span>
+          <input v-model.trim="confirmationCode" type="text" inputmode="numeric" placeholder="123456" required />
         </label>
         <button type="submit" class="register__submit" :disabled="isConfirmDisabled">
           <span v-if="loading" class="register__spinner" aria-hidden="true" />
-          <span>確認驗證碼</span>
+          <span>Confirm sign up</span>
         </button>
       </form>
 
       <p v-if="displayError" class="register__error">{{ displayError }}</p>
       <p v-if="successMessage" class="register__success">{{ successMessage }}</p>
+      <button type="button" class="register__link" @click="goLogin" :disabled="loading">Back to Login</button>
     </section>
   </main>
 </template>
@@ -62,14 +48,11 @@ const authStore = useAuthStore();
 const { loading, errorMessage, nextStep, isAuthenticated } = storeToRefs(authStore);
 
 const email = ref("");
-const password = ref("");
-const passwordConfirmation = ref("");
 const confirmationCode = ref("");
 const localError = ref("");
 const successMessage = ref("");
 
-const needsConfirmation = computed(() => nextStep.value?.signUpStep && nextStep.value.signUpStep === "CONFIRM_SIGN_UP");
-
+const needsConfirmation = computed(() => nextStep.value?.signUpStep === "CONFIRM_SIGN_UP");
 const displayError = computed(() => localError.value || errorMessage.value);
 
 const maskedEmail = computed(() => {
@@ -81,20 +64,10 @@ const maskedEmail = computed(() => {
   return `${maskedLocal}@${domain}`;
 });
 
-const isSubmitDisabled = computed(() => {
-  if (loading.value) return true;
-  if (!email.value || !password.value || !passwordConfirmation.value) {
-    return true;
-  }
-  return password.value !== passwordConfirmation.value;
-});
+const isSubmitDisabled = computed(() => loading.value || !email.value.trim());
+const isConfirmDisabled = computed(() => loading.value || confirmationCode.value.trim().length === 0);
 
-const isConfirmDisabled = computed(() => {
-  if (loading.value) return true;
-  return confirmationCode.value.trim().length === 0;
-});
-
-watch([email, password, passwordConfirmation, confirmationCode], () => {
+watch([email, confirmationCode], () => {
   if (localError.value) {
     localError.value = "";
   }
@@ -105,7 +78,6 @@ watch([email, password, passwordConfirmation, confirmationCode], () => {
 
 watch(isAuthenticated, async (value) => {
   if (value) {
-    successMessage.value = "註冊並登入成功，將帶您進入首頁。";
     await router.replace({ name: "home" });
   }
 });
@@ -114,27 +86,24 @@ async function handleSubmit() {
   localError.value = "";
   successMessage.value = "";
 
-  if (password.value !== passwordConfirmation.value) {
-    localError.value = "兩次輸入的密碼不一致，請重新確認。";
-    return;
-  }
-
   try {
     const normalizedEmail = email.value.trim();
     email.value = normalizedEmail;
 
     const response = await authStore.register({
-      password: password.value,
       email: normalizedEmail,
     });
 
     if (response.isSignUpComplete) {
-      successMessage.value = "註冊成功，正在為您登入…";
-    } else if (response.nextStep?.signUpStep === "CONFIRM_SIGN_UP") {
-      successMessage.value = "請輸入驗證碼完成註冊。";
+      successMessage.value = "Registration complete. You can now sign in with email OTP.";
+      return;
+    }
+
+    if (response.nextStep?.signUpStep === "CONFIRM_SIGN_UP") {
+      successMessage.value = "Verification code sent. Please check your email.";
     }
   } catch (err) {
-    localError.value = err?.message ?? "註冊失敗，請稍後再試。";
+    localError.value = err?.message ?? "Registration failed. Please try again.";
   }
 }
 
@@ -145,10 +114,9 @@ async function handleConfirm() {
   try {
     const normalizedEmail = email.value.trim();
     if (!normalizedEmail) {
-      localError.value = "請重新輸入註冊使用的 Email。";
+      localError.value = "Email is required.";
       return;
     }
-    email.value = normalizedEmail;
 
     const result = await authStore.confirmRegistration({
       email: normalizedEmail,
@@ -156,13 +124,18 @@ async function handleConfirm() {
     });
 
     if (result.isSignUpComplete) {
-      successMessage.value = "驗證完成，請使用該帳號登入。";
+      successMessage.value = "Email verified. Redirecting...";
       confirmationCode.value = "";
       await router.replace({ name: "home" });
     }
   } catch (err) {
-    localError.value = err?.message ?? "驗證碼錯誤或已失效，請再試一次。";
+    localError.value = err?.message ?? "Code verification failed. Please try again.";
   }
+}
+
+function goLogin() {
+  if (loading.value) return;
+  router.push({ name: "home" });
 }
 </script>
 
@@ -244,10 +217,6 @@ async function handleConfirm() {
   box-shadow: 0 12px 25px rgba(163, 69, 255, 0.35);
 }
 
-.register__field input::placeholder {
-  color: rgba(255, 255, 255, 0.35);
-}
-
 .register__error {
   margin-top: 1.5rem;
   color: #f87171;
@@ -282,6 +251,29 @@ async function handleConfirm() {
   border: 1px solid rgba(233, 30, 99, 0.3);
   color: rgba(255, 255, 255, 0.75);
   line-height: 1.5;
+}
+
+.register__link {
+  margin-top: 1rem;
+  background: none;
+  border: none;
+  color: rgba(184, 183, 255, 0.88);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.register__link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.register__link:not(:disabled):hover {
+  color: #fff;
+  text-decoration: underline;
 }
 
 @keyframes register-spin {

@@ -26,7 +26,7 @@ const router = createRouter({
       component: () => import("../views/ChatView.vue"),
     },
     {
-      path: "/register-2337306cfbf0a1be67d91b55728f7233b71bbc05",
+      path: "/register",
       name: "register",
       component: () => import("../views/RegisterView.vue"),
     },
@@ -34,12 +34,7 @@ const router = createRouter({
       path: "/dashboard",
       name: "dashboard",
       component: () => import("../views/DashboardView.vue"),
-    },
-    {
-      path: "/qrcode-3dc6ae3aa6c51faa0f08f6c8f9e3a4702b65fa59",
-      name: "qrcode",
-      component: () => import("../views/QrCodeView.vue"),
-    },
+    }
   ],
 });
 

@@ -6,6 +6,15 @@ import { defineAuth } from '@aws-amplify/backend';
  */
 export const auth = defineAuth({
   loginWith: {
-    email: true,
-  },
+    email: {
+      otpLogin: true // Enable email OTP
+    }
+  }
+  // senders: {
+  //   email: {
+  //     fromEmail: "registrations@37-studio.com",
+  //     fromName: "Dreamlog",
+  //     replyTo: "li-chi@37-studio.com"
+  //   },
+  // },
 });
