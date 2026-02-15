@@ -2,13 +2,14 @@ import { computed, ref } from "vue";
 import { defineStore } from "pinia";
 import { confirmSignIn, getCurrentUser, signIn, signOut, signUp, confirmSignUp } from "aws-amplify/auth";
 import { Hub } from "aws-amplify/utils";
-import { ensureCollectionForUser as ensureDefaultCollectionForUser } from "./collection";
+import { useCollectionStore } from "./collection";
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref(null);
   const loading = ref(false);
   const error = ref(null);
   const nextStep = ref(null);
+  const collectionStore = useCollectionStore();
 
   let removeAuthListener;
 
@@ -77,7 +78,7 @@ export const useAuthStore = defineStore("auth", () => {
 
     try {
       const response = await confirmSignIn({ challengeResponse });
-      nextStep.value = response.nextStep;
+      // nextStep.value = response.nextStep;
 
       if (response.isSignedIn) {
         const currentUser = await getCurrentUser();
@@ -200,7 +201,7 @@ export const useAuthStore = defineStore("auth", () => {
 
   async function ensureUserCollection(currentUser) {
     try {
-      await ensureDefaultCollectionForUser(currentUser);
+      await collectionStore.ensureCollectionForUser(currentUser);
     } catch (err) {
       if (import.meta?.env?.DEV) {
         console.debug("Failed to ensure Collection for user:", err);

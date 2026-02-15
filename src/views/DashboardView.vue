@@ -397,18 +397,6 @@ function buildNormalizedCards(payload) {
 function createCard(entry, index) {
   if (entry == null) return null;
 
-  if (typeof entry === "string" || typeof entry === "number") {
-    const title = String(entry).trim();
-    if (!title) return null;
-    return finalizeCard(
-      {
-        id: `card-${index + 1}`,
-        title,
-      },
-      index
-    );
-  }
-
   if (typeof entry !== "object") return null;
 
   const id =
@@ -421,15 +409,15 @@ function createCard(entry, index) {
     entry.code ??
     `card-${index + 1}`;
 
-  const title = entry.title ?? entry.name ?? entry.cardName ?? entry.displayName ?? entry.label ?? entry.nickname ?? `Card ${index + 1}`;
+  const property = JSON.parse(entry.property ?? "{}");
 
-  const description =
-    entry.description ?? entry.story ?? entry.flavorText ?? entry.detail ?? entry.summary ?? entry.text ?? "";
+  const title = property.name ?? `Card ${index + 1}`;
 
-  const image = entry.image ?? entry.imageUrl ?? entry.imageURL ?? entry.art ?? entry.artwork ?? entry.thumbnail ?? "";
+  const description = property.description ?? "";
 
-  const mintedSource =
-    entry.mintedAt ?? entry.createdAt ?? entry.timestamp ?? entry.mintTime ?? entry.minted_at ?? entry.date;
+  const image = property.image ?? "";
+
+  const mintedSource = property.minted_at ?? entry.date;
 
   return finalizeCard(
     {
@@ -497,7 +485,7 @@ function formatMintedAt(value) {
   box-shadow: 0 26px 60px rgba(8, 12, 28, 0.45);
   padding: 20px;
   display: grid;
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: 280px 1fr;
   gap: 20px;
 }
 
