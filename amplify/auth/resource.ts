@@ -29,5 +29,11 @@ export const auth = defineAuth({
       minLen: 0,
       maxLen: 256,
     },
+     "custom:appearance": {
+      dataType: "String",
+      mutable: true,
+      minLen: 0,
+      maxLen: 1000,
+    },
   }
 });
